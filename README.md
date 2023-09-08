@@ -17,8 +17,7 @@ know whether this package might be useful for them.
 ## preview
 
 <!-- put gif file named img/clickydemo.gif next to lib folder -->
-
-![clicky demo](img/clickydemo.gif)
+<img src="img/clickydemo.gif" width="300" />
 
 <!-- ## Getting started
 

@@ -1,49 +1,72 @@
 library clicky_flutter;
 
+import 'package:clicky_flutter/styles.dart';
 import 'package:flutter/material.dart';
 
-class TouchEffectWrapper extends StatefulWidget {
-  final Widget child;
-  final Color? $clickedColor;
-  final double? $clickedRadius;
-  final double? $clickedShrinkRatio;
-  final Curve? $clickedCurveColorIn;
-  final Curve? $clickedCurveColorOut;
-  final Curve? $clickedCurveSizeIn;
-  final Curve? $clickedCurveSizeOut;
-  final Duration? $clickedDurationIn;
-  final Duration? $clickedDurationOut;
+bool _globalClickyInEffect = false;
 
-  const TouchEffectWrapper({
+class Clicky extends StatefulWidget {
+  /// the widget that will be wrapped by the clicky effect
+  final Widget child;
+
+  /// This defines the color of the clicky effect,
+  ///
+  /// which is the color of the container that will fade in and out when the widget is clicked.
+  final Color clickyColor;
+
+  /// This defines the border radius of the clicky effect,
+  ///
+  /// which is the border radius of the container that will fade in and out when the widget is clicked.
+  final double clickyBorderRadius;
+
+  /// This defines the shrink ratio of the clicky effect.
+  ///
+  /// The clicky effect will shrink by this ratio when the widget is clicked. (eg. 0.05 means 5% shrink)
+  final double clickyShrinkRatio;
+
+  /// This defines the curve of the color fade in effect of the clicky effect.
+  /// The default value is [Curves.easeOut].
+  /// See [Curves] for more details.
+  final Curve clickyCurveColorIn;
+  final Curve clickyCurveColorOut;
+  final Curve clickyCurveSizeIn;
+  final Curve clickyCurveSizeOut;
+  final Duration clickyDurationIn;
+  final Duration clickyDurationOut;
+  final TouchBoundStyles clickyTouchBoundStyles;
+
+  const Clicky({
     Key? key,
     required this.child,
-    this.$clickedColor,
-    this.$clickedRadius,
-    this.$clickedShrinkRatio,
-    this.$clickedCurveColorIn,
-    this.$clickedCurveColorOut,
-    this.$clickedCurveSizeIn,
-    this.$clickedCurveSizeOut,
-    this.$clickedDurationIn,
-    this.$clickedDurationOut,
+    this.clickyColor = const Color.fromARGB(18, 0, 0, 0),
+    this.clickyBorderRadius = 0,
+    this.clickyShrinkRatio = 0.05,
+    this.clickyCurveColorIn = Curves.easeOut,
+    this.clickyCurveColorOut = Curves.easeOut,
+    this.clickyCurveSizeIn = Curves.easeOut,
+    this.clickyCurveSizeOut = Curves.easeOut,
+    this.clickyDurationIn = const Duration(milliseconds: 70),
+    this.clickyDurationOut = const Duration(milliseconds: 70),
+    this.clickyTouchBoundStyles = TouchBoundStyles.byInitialTouchPoint,
   }) : super(key: key);
 
   @override
-  TouchEffectWrapperState createState() => TouchEffectWrapperState();
+  ClickyState createState() => ClickyState();
 }
 
-class TouchEffectWrapperState extends State<TouchEffectWrapper> with SingleTickerProviderStateMixin {
-  double __scale = 1;
-  bool __isClicked = false;
-  Color? $clickedColor;
-  double? $clickedRadius;
-  double? $clickedShrinkRatio;
-  Curve? $clickedCurveColorIn;
-  Curve? $clickedCurveColorOut;
-  Curve? $clickedCurveSizeIn;
-  Curve? $clickedCurveSizeOut;
-  Duration? $clickedDurationIn;
-  Duration? $clickedDurationOut;
+class ClickyState extends State<Clicky> with SingleTickerProviderStateMixin {
+  double _scale = 1;
+  bool _isClicked = false;
+  Color? clickyColor;
+  double? clickyBorderRadius;
+  double? clickyShrinkRatio;
+  Curve? clickyCurveColorIn;
+  Curve? clickyCurveColorOut;
+  Curve? clickyCurveSizeIn;
+  Curve? clickyCurveSizeOut;
+  Duration? clickyDurationIn;
+  Duration? clickyDurationOut;
+  TouchBoundStyles? touchBoundStyles;
 
   @override
   void initState() {
@@ -51,256 +74,95 @@ class TouchEffectWrapperState extends State<TouchEffectWrapper> with SingleTicke
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    Color $clickedColor = widget.$clickedColor ?? Colors.black.withOpacity(0.045);
-    double $clickedRadius = widget.$clickedRadius ?? 0;
-    double $clickedShrinkRatio = widget.$clickedShrinkRatio ?? 0.025;
-    Curve $clickedCurveColorIn = widget.$clickedCurveColorIn ?? Curves.easeOutCirc;
-    Curve $clickedCurveColorOut = widget.$clickedCurveColorOut ?? Curves.easeOutBack;
-    Curve $clickedCurveSizeIn = widget.$clickedCurveSizeIn ?? Curves.linear;
-    Curve $clickedCurveSizeOut = widget.$clickedCurveSizeOut ?? Curves.easeOutBack;
-    Duration $clickedDurationIn = widget.$clickedDurationIn ?? Duration(milliseconds: 100);
-    Duration $clickedDurationOut = widget.$clickedDurationOut ?? Duration(milliseconds: 300);
+    Color clickyColor = widget.clickyColor;
+    double clickyBorderRadius = widget.clickyBorderRadius;
+    double clickyShrinkRatio = widget.clickyShrinkRatio;
+    Curve clickyCurveColorIn = widget.clickyCurveColorIn;
+    Curve clickyCurveColorOut = widget.clickyCurveColorOut;
+    Curve clickyCurveSizeIn = widget.clickyCurveSizeIn;
+    Curve clickyCurveSizeOut = widget.clickyCurveSizeOut;
+    Duration clickyDurationIn = widget.clickyDurationIn;
+    Duration clickyDurationOut = widget.clickyDurationOut;
+    TouchBoundStyles touchBoundStyles = widget.clickyTouchBoundStyles;
+
+    List<double> _initialTouchPoint = [0, 0];
 
     return GestureDetector(
+      // disable multi-touch
+      behavior: HitTestBehavior.opaque,
+
       onPanEnd: (details) {
         setState(() {
-          __scale = 1;
-          __isClicked = false;
+          _scale = 1;
+          _isClicked = false;
         });
+        _globalClickyInEffect = false;
       },
       onPanDown: (details) {
+        if (_globalClickyInEffect) {
+          return;
+        }
         setState(() {
-          __scale = 1 - $clickedShrinkRatio;
-          __isClicked = true;
+          _scale = 1 - clickyShrinkRatio;
+          _isClicked = true;
         });
+        _globalClickyInEffect = true;
+      },
+      onPanStart: (details) {
+        // save the initial touch point
+        _initialTouchPoint = [details.globalPosition.dx, details.globalPosition.dy];
       },
       onPanCancel: () {
         setState(() {
-          __scale = 1;
-          __isClicked = false;
+          _scale = 1;
+          _isClicked = false;
         });
+        _globalClickyInEffect = false;
       },
-      // also, if touch position is too far (1.5 times further than the size) from the widget, cancel the effect. However, if it comes back to the widget, the effect will be restored.
       onPanUpdate: (details) {
-        if (
-            // if touch position is too far (50 px) from the context size, cancel the effect.
-            details.localPosition.dx < -50 ||
-                details.localPosition.dx > context.size!.width + 50 ||
-                details.localPosition.dy < -50 ||
-                details.localPosition.dy > context.size!.height + 50) {
-          setState(() {
-            __scale = 1;
-            __isClicked = false;
-          });
-        } else {
-          setState(() {
-            __scale = 1 - $clickedShrinkRatio;
-            __isClicked = true;
-          });
+        // if (_globalClickyInEffect) {
+        //   return;
+        // }
+        //! EFFECT DISABLING BOUND DEPENDS ON THE CONTEXT SIZE
+        // if touch position is too far (50 px) from the context size, cancel the effect.
+        if (touchBoundStyles == TouchBoundStyles.byContextSize) {
+          if (details.localPosition.dx < -50 ||
+              details.localPosition.dx > context.size!.width + 50 ||
+              details.localPosition.dy < -50 ||
+              details.localPosition.dy > context.size!.height + 50) {
+            setState(() {
+              _scale = 1;
+              _isClicked = false;
+            });
+          }
+          //! EFFECT DISABLING BOUND DEPENDS ON THE TOUCHED POINT
+          // if touch position is moved too far (80 px) from the initial touch point, cancel the effect.
+        } else if (touchBoundStyles == TouchBoundStyles.byInitialTouchPoint) {
+          if ((details.globalPosition.dx - _initialTouchPoint[0]).abs() > 80 ||
+              (details.globalPosition.dy - _initialTouchPoint[1]).abs() > 80) {
+            setState(() {
+              _scale = 1;
+              _isClicked = false;
+            });
+          }
         }
       },
       child: AnimatedContainer(
         padding: EdgeInsets.all(0),
-        duration: __isClicked ? $clickedDurationIn : $clickedDurationOut,
-        curve: __isClicked ? $clickedCurveColorIn : $clickedCurveColorOut,
+        duration: _isClicked ? clickyDurationIn : clickyDurationOut,
+        curve: _isClicked ? clickyCurveColorIn : clickyCurveColorOut,
         decoration: BoxDecoration(
-          color: __isClicked ? $clickedColor : $clickedColor.withAlpha(0),
-          borderRadius: BorderRadius.circular($clickedRadius),
+          color: _isClicked ? clickyColor : clickyColor.withAlpha(0),
+          borderRadius: BorderRadius.circular(clickyBorderRadius),
         ),
         child: AnimatedScale(
-          scale: __scale,
-          duration: __isClicked ? $clickedDurationIn : $clickedDurationOut,
-          curve: __isClicked ? $clickedCurveSizeIn : $clickedCurveSizeOut,
+          scale: _scale,
+          duration: _isClicked ? clickyDurationIn : clickyDurationOut,
+          curve: _isClicked ? clickyCurveSizeIn : clickyCurveSizeOut,
           child: widget.child,
         ),
       ),
-    );
-  }
-}
-
-class TouchEffectListTile extends ListTile {
-  /// Highlight color when tapped.
-  final Color? $clickedColor;
-  final double? $clickedRadius;
-  final double? $clickedShrinkRatio;
-  final Curve? $clickedCurveColorIn;
-  final Curve? $clickedCurveColorOut;
-  final Curve? $clickedCurveSizeIn;
-  final Curve? $clickedCurveSizeOut;
-  final Duration? $clickedDurationIn;
-  final Duration? $clickedDurationOut;
-  const TouchEffectListTile({
-    Key? key,
-    Widget? leading,
-    Widget? title,
-    Widget? subtitle,
-    Widget? trailing,
-    bool isThreeLine = false,
-    bool enabled = true,
-    GestureTapCallback? onTap,
-    GestureLongPressCallback? onLongPress,
-    MouseCursor? mouseCursor,
-    bool selected = false,
-    Color? tileColor,
-    Color? focusColor,
-    Color? hoverColor,
-    Color? selectedTileColor,
-    ShapeBorder? shape,
-    Clip clipBehavior = Clip.none,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    MaterialTapTargetSize? materialTapTargetSize,
-    double? minVerticalPadding,
-    bool? enableFeedback,
-    EdgeInsetsGeometry? contentPadding,
-    this.$clickedColor,
-    this.$clickedRadius,
-    this.$clickedShrinkRatio,
-    this.$clickedCurveColorIn,
-    this.$clickedCurveColorOut,
-    this.$clickedCurveSizeIn,
-    this.$clickedCurveSizeOut,
-    this.$clickedDurationIn,
-    this.$clickedDurationOut,
-  }) : super(
-          key: key,
-          leading: leading,
-          title: title,
-          subtitle: subtitle,
-          trailing: trailing,
-          isThreeLine: isThreeLine,
-          enabled: enabled,
-          onTap: onTap,
-          onLongPress: onLongPress,
-          mouseCursor: mouseCursor,
-          selected: selected,
-          tileColor: tileColor,
-          focusColor: focusColor,
-          hoverColor: hoverColor,
-          selectedTileColor: selectedTileColor,
-          shape: shape,
-          focusNode: focusNode,
-          autofocus: autofocus,
-          minVerticalPadding: minVerticalPadding,
-          enableFeedback: enableFeedback,
-          contentPadding: contentPadding,
-        );
-
-  @override
-  Widget build(BuildContext context) {
-    return TouchEffectWrapper(
-      $clickedColor: $clickedColor,
-      $clickedRadius: $clickedRadius,
-      $clickedShrinkRatio: $clickedShrinkRatio,
-      $clickedCurveColorIn: $clickedCurveColorIn,
-      $clickedCurveColorOut: $clickedCurveColorOut,
-      $clickedCurveSizeIn: $clickedCurveSizeIn,
-      $clickedCurveSizeOut: $clickedCurveSizeOut,
-      $clickedDurationIn: $clickedDurationIn,
-      $clickedDurationOut: $clickedDurationOut,
-      child: super.build(context),
-    );
-  }
-}
-
-class TouchEffectInkWell extends InkWell {
-  /// Highlight color when tapped.
-  final Color? $clickedColor;
-  final double? $clickedRadius;
-  final double? $clickedShrinkRatio;
-  final Curve? $clickedCurveColorIn;
-  final Curve? $clickedCurveColorOut;
-  final Curve? $clickedCurveSizeIn;
-  final Curve? $clickedCurveSizeOut;
-  final Duration? $clickedDurationIn;
-  final Duration? $clickedDurationOut;
-  const TouchEffectInkWell({
-    Widget? child,
-    Key? key,
-    GestureTapCallback? onTap,
-    GestureTapCallback? onDoubleTap,
-    GestureLongPressCallback? onLongPress,
-    GestureLongPressStartCallback? onLongPressStart,
-    GestureLongPressMoveUpdateCallback? onLongPressMoveUpdate,
-    GestureLongPressUpCallback? onLongPressUp,
-    GestureLongPressEndCallback? onLongPressEnd,
-    GestureTapDownCallback? onTapDown,
-    GestureTapCancelCallback? onTapCancel,
-    ValueChanged<bool>? onHighlightChanged,
-    ValueChanged<bool>? onHover,
-    MouseCursor? mouseCursor,
-    InteractiveInkFeatureFactory? splashFactory,
-    double? radius,
-    BorderRadius? borderRadius,
-    ShapeBorder? customBorder,
-    bool enableFeedback = true,
-    Color? focusColor,
-    Color? hoverColor,
-    Color? highlightColor,
-    Color? splashColor,
-    Brightness? splashFactoryBrightness,
-    InteractiveInkFeatureFactory? highlightFactory,
-    bool excludeFromSemantics = false,
-    FocusNode? focusNode,
-    bool canRequestFocus = true,
-    VoidCallback? onFocusChange,
-    bool autofocus = false,
-    MaterialStatesController? statesController,
-    this.$clickedColor,
-    this.$clickedRadius,
-    this.$clickedShrinkRatio,
-    this.$clickedCurveColorIn,
-    this.$clickedCurveColorOut,
-    this.$clickedCurveSizeIn,
-    this.$clickedCurveSizeOut,
-    this.$clickedDurationIn,
-    this.$clickedDurationOut,
-  }) : super(
-          key: key,
-          child: child,
-          onTap: onTap,
-          onDoubleTap: onDoubleTap,
-          onLongPress: onLongPress,
-          onTapDown: onTapDown,
-          onTapCancel: onTapCancel,
-          onHighlightChanged: onHighlightChanged,
-          onHover: onHover,
-          mouseCursor: mouseCursor,
-          splashFactory: splashFactory,
-          radius: radius,
-          borderRadius: borderRadius,
-          customBorder: customBorder,
-          enableFeedback: enableFeedback,
-          focusColor: focusColor,
-          hoverColor: hoverColor,
-          highlightColor: highlightColor,
-          splashColor: splashColor,
-          excludeFromSemantics: excludeFromSemantics,
-          focusNode: focusNode,
-          canRequestFocus: canRequestFocus,
-          autofocus: autofocus,
-          statesController: statesController,
-        );
-
-  @override
-  Widget build(BuildContext context) {
-    return TouchEffectWrapper(
-      $clickedColor: $clickedColor,
-      $clickedRadius: $clickedRadius,
-      $clickedShrinkRatio: $clickedShrinkRatio,
-      $clickedCurveColorIn: $clickedCurveColorIn,
-      $clickedCurveColorOut: $clickedCurveColorOut,
-      $clickedCurveSizeIn: $clickedCurveSizeIn,
-      $clickedCurveSizeOut: $clickedCurveSizeOut,
-      $clickedDurationIn: $clickedDurationIn,
-      $clickedDurationOut: $clickedDurationOut,
-      child: super.build(context),
     );
   }
 }

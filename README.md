@@ -11,27 +11,39 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages).
 -->
 
-## preview
+## clicky_flutter
 
 <!-- put gif file named img/clickydemo.gif next to lib folder -->
 <img src="img/clickydemo.gif" width="300" />
 
-<!-- ## Getting started
+<!-- ## Getting started -->
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+## Installation
+
+Add the following to your `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  clicky_flutter: ^0.0.1
+```
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. -->
-<!--
+To start using this package, import it into your code:
+
 ```dart
-const like = 'sample';
+import 'package:clicky_flutter/clicky_flutter.dart';
 ```
 
-## Additional information
+Then one simple wrapper widget is all you need to start using the package, like this:
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more. -->
+```dart
+    Clicky(
+        child: Container(
+            child: ElevatedButton(
+            onPressed: () {},
+            child: Text('Go!'),
+            ),
+        )
+    )
+```

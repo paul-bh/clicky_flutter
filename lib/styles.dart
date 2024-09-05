@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
 
-enum TouchBoundStyles { byInitialTouchPoint, byContextSize }
+enum ClickyBoundaryStyle {
+  fromInitialTouchPoint,
+  fromWidgetOutline,
+  both,
+}
 
 class ClickyStyle {
   const ClickyStyle({
     this.color = const Color.fromARGB(18, 0, 0, 0),
     this.borderRadius = 10,
-    this.shrinkScale = const ShrinkScale.byRatio(0.02),
+    this.shrinkScale = const ShrinkScale.byRatio(0.05),
     this.curveColorIn = Curves.easeOut,
     this.curveColorOut = Curves.easeOut,
     this.curveSizeIn = Curves.easeOut,
     this.curveSizeOut = Curves.easeOut,
-    this.durationIn = const Duration(milliseconds: 70),
-    this.durationOut = const Duration(milliseconds: 70),
-    this.touchBoundStyles = TouchBoundStyles.byInitialTouchPoint,
+    this.durationIn = const Duration(milliseconds: 120),
+    this.durationOut = const Duration(milliseconds: 120),
+    this.boundaryFromInitialTouchPoint = 70,
+    this.boundaryFromWidgetOutline = 0,
+    this.boundaryStyle = ClickyBoundaryStyle.fromInitialTouchPoint,
   });
 
   /// the color of the clicky effect
@@ -26,21 +32,26 @@ class ClickyStyle {
   final Curve curveSizeOut;
   final Duration durationIn;
   final Duration durationOut;
-  final TouchBoundStyles touchBoundStyles;
+  final double boundaryFromInitialTouchPoint;
+  final double boundaryFromWidgetOutline;
+  final ClickyBoundaryStyle boundaryStyle;
 }
 
 class ShrinkScale {
-  final double ratio;
-  final double value;
+  final double? ratio;
+  // final double? value;
 
-  const ShrinkScale.byRatio(this.ratio) : value = 0;
-  const ShrinkScale.byValue(this.value) : ratio = 0;
-
+  // make validator, ratio and value cannot be null at the same time
   double byRatio() {
-    return ratio;
+    assert(ratio != null);
+    return ratio!;
   }
 
-  double byValue() {
-    return value;
-  }
+  // double byValue() {
+  //   assert(ratio != null || value != null);
+  //   return value!;
+  // }
+
+  const ShrinkScale.byRatio(this.ratio);
+  // const ShrinkScale.byValue(this.value) : ratio = null;
 }

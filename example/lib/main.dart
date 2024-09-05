@@ -40,6 +40,7 @@ class MyHomePage extends StatelessWidget {
                   itemCount: 20,
                   itemBuilder: (BuildContext context, int index) {
                     return Clicky(
+                      style: ClickyStyle(),
                       child: ListTile(
                         title: Text('ListTile can have effects too $index'),
                         subtitle: Text('Option $index'),
@@ -51,15 +52,18 @@ class MyHomePage extends StatelessWidget {
               ),
               SizedBox(height: 20),
               Clicky(
-                style: ClickyStyle(color: Colors.transparent),
+                style: ClickyStyle(
+                  color: Colors.transparent,
+                  boundaryFromWidgetOutline: 10,
+                ),
                 child: Container(
                   width: double.infinity,
                   height: 75,
                   child: ElevatedButton(
                     // disable ripple effect
                     style: ButtonStyle(
-                      overlayColor: MaterialStateProperty.all(Colors.transparent),
-                      shadowColor: MaterialStateProperty.all(Colors.transparent),
+                      overlayColor: WidgetStateProperty.all(Colors.transparent),
+                      shadowColor: WidgetStateProperty.all(Colors.transparent),
                     ),
                     onPressed: () {},
                     child: Text('Go!', style: TextStyle(fontSize: 30)),
